@@ -213,9 +213,44 @@
     max-width: 320px;
     line-height: 1.5;
   }
+
+  /* --- music toggle --- */
+  .music-toggle {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(127,212,200,0.3);
+    border-radius: 24px;
+    padding: 8px 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+  }
+  .music-toggle:hover { border-color: var(--accent); color: var(--text); }
+  .music-toggle .icon { font-size: 1.1rem; line-height: 1; }
+  .music-toggle.on {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  #ytPlayer { position: absolute; width: 0; height: 0; overflow: hidden; left: -9999px; }
 </style>
 </head>
 <body>
+
+  <div class="music-toggle" id="musicToggle" title="מוזיקת רקע">
+    <span class="icon" id="musicIcon">🔇</span>
+    <span id="musicLabel">מוזיקה</span>
+  </div>
+
+  <div id="ytPlayer"></div>
 
   <h1>נשימת ריבוע</h1>
   <p class="subtitle">שאיפה · החזקה · נשיפה · החזקה</p>
@@ -384,6 +419,59 @@
     clearTimers();
     start();
   });
+
+  /* ---------- מוזיקת רקע (YouTube) ---------- */
+  const VIDEO_ID = "1ZYbU82GVz4";
+  const musicToggle = document.getElementById("musicToggle");
+  const musicIcon = document.getElementById("musicIcon");
+  const musicLabel = document.getElementById("musicLabel");
+
+  let ytPlayer = null;
+  let ytReady = false;
+  let musicOn = false;
+
+  // טעינת ה-API של יוטיוב
+  (function loadYT() {
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+  })();
+
+  window.onYouTubeIframeAPIReady = function () {
+    ytPlayer = new YT.Player("ytPlayer", {
+      videoId: VIDEO_ID,
+      playerVars: {
+        autoplay: 0,
+        controls: 0,
+        loop: 1,
+        playlist: VIDEO_ID   // נדרש כדי שה-loop יעבוד על סרטון בודד
+      },
+      events: {
+        onReady: () => {
+          ytReady = true;
+          ytPlayer.setVolume(45);
+          if (musicOn) ytPlayer.playVideo();
+        }
+      }
+    });
+  };
+
+  function setMusic(on) {
+    musicOn = on;
+    if (on) {
+      musicIcon.textContent = "🔊";
+      musicLabel.textContent = "מוזיקה פועלת";
+      musicToggle.classList.add("on");
+      if (ytReady) ytPlayer.playVideo();
+    } else {
+      musicIcon.textContent = "🔇";
+      musicLabel.textContent = "מוזיקה";
+      musicToggle.classList.remove("on");
+      if (ytReady) ytPlayer.pauseVideo();
+    }
+  }
+
+  musicToggle.addEventListener("click", () => setMusic(!musicOn));
 </script>
 </body>
 </html>
